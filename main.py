@@ -6,6 +6,7 @@ from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 from data import db_session
 from data.user import User
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '421b1f57d3e228b7'
@@ -71,7 +72,9 @@ def index():
 
 def main():
     db_session.global_init('db/db.sqlite')
-    app.run()
+
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
 
 
 if __name__ == '__main__':
