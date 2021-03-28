@@ -99,6 +99,15 @@ def logout():
     return redirect('/')
 
 
+@app.route('/profile')
+@login_required
+def profile():
+    params = {
+        'title': 'Личный кабинет'
+    }
+    return render_template('profile.html', **params)
+
+
 @app.route('/')
 def index():
     params = {

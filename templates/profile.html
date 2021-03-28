@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Учетная запись</h1>
+    <h2>{{current_user.username}}</h2>
+    <a href="/logout" class="btn btn-danger">Выйти</a>
+    <h1 style="text-align: center;">Ваши товары</h1>
+    <section>
+        <div class="good-container">
+            <h2 style="text-align: center;">Good name</h2>
+            <img src="static/images/no-image.png" alt="no-image">
+        </div>
+        <div class="good-container">
+            <h2 style="text-align: center;">Good name</h2>
+            <img src="static/images/no-image.png" alt="no-image">
+        </div>
+        <div class="good-container">
+            <h2 style="text-align: center;">Good name</h2>
+            <img src="static/images/no-image.png" alt="no-image">
+        </div>
+        <div class="good-container">
+            <h2 style="text-align: center;">Good name</h2>
+            <img src="static/images/no-image.png" alt="no-image">
+        </div>
+    </section>
+{% endblock %}
