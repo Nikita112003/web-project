@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
-    <link rel="icon" href="static/images/favicon.png">
-    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="icon" href="{{url_for('static', filename='images/favicon.png')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}">
     <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css"
       integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
@@ -17,6 +17,7 @@
     {% if current_user.is_authenticated %}
         <p>
             <a href="/profile" class="navbar-brand btn btn-light">{{current_user.username}}</a>
+            <a href="/add_good" class="btn btn-success">Добавить товар</a>
         </p>
     {% else %}
         <p>

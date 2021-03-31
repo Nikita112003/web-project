@@ -10,21 +10,12 @@
         </ul>
     </aside>
     <section>
-        <div class="good-container">
-            <h2 style="text-align: center;">Good name</h2>
-            <img src="static/images/no-image.png" alt="no-image">
-        </div>
-        <div class="good-container">
-            <h2 style="text-align: center;">Good name</h2>
-            <img src="static/images/no-image.png" alt="no-image">
-        </div>
-        <div class="good-container">
-            <h2 style="text-align: center;">Good name</h2>
-            <img src="static/images/no-image.png" alt="no-image">
-        </div>
-        <div class="good-container">
-            <h2 style="text-align: center;">Good name</h2>
-            <img src="static/images/no-image.png" alt="no-image">
-        </div>
+        {% for good in goods %}
+            <div class="good-container" onclick="location.href='good/{{good.id}}'">
+                <h2 style="text-align: center;">{{good.name}}</h2>
+                <img src="{{url_for('static', filename='uploads/{}'.format(good.photo))}}"
+                     alt="no-image" width="300" height="300">
+            </div>
+        {% endfor %}
     </section>
 {% endblock %}
