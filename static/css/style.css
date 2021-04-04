@@ -6,15 +6,9 @@ h1 a {
     margin-left: 5px;
     text-decoration: none;
 }
-aside {
-    border: 2px solid black;
-    left: 2%;
-    margin-top: 5px;
-    padding: 5px;
-    position: fixed;
-    width: fit-content;
-    z-index: 10;
-    background-color: white;
+a.user-link {
+    color: black;
+    text-decoration: none;
 }
 section {
     display: flex;

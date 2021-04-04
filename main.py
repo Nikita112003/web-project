@@ -1,7 +1,7 @@
-from flask import abort, Flask, redirect, render_template
+from flask import abort, Flask, redirect, render_template, request
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileRequired
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import PasswordField, StringField, SubmitField, BooleanField, DecimalField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
@@ -38,7 +38,13 @@ class LoginForm(FlaskForm):
 class AddGoodForm(FlaskForm):
     name = StringField('Название', validators=[DataRequired()])
     price = DecimalField('Цена', validators=[DataRequired()])
-    photo = FileField('Фото', validators=[FileRequired()])
+    photo = FileField('Фото', validators=[FileRequired(), FileAllowed(['jpg', 'png'])])
+    submit = SubmitField('Добавить')
+
+
+class EditGoodForm(FlaskForm):
+    name = StringField('Название', validators=[DataRequired()])
+    price = DecimalField('Цена', validators=[DataRequired()])
     submit = SubmitField('Добавить')
 
 
@@ -125,6 +131,21 @@ def profile():
     return render_template('profile.html', **params)
 
 
+@app.route('/user/<int:user_id>')
+def get_user(user_id):
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).get(user_id)
+    if not user:
+        abort(404)
+    goods = db_sess.query(Good).filter(Good.user_id == user.id).all()
+    params = {
+        'title': user.username,
+        'user': user,
+        'goods': goods
+    }
+    return render_template('user.html', **params)
+
+
 @app.route('/good/<int:good_id>')
 def get_good(good_id):
     db_sess = db_session.create_session()
@@ -166,7 +187,60 @@ def add_good():
         'title': 'Добавление товара',
         'form': form
     }
-    return render_template('good_form.html', **params)
+    return render_template('add_good_form.html', **params)
+
+
+@app.route('/edit/<int:good_id>', methods=['GET', 'POST'])
+@login_required
+def edit_good(good_id):
+    form = EditGoodForm()
+    if request.method == 'GET':
+        db_sess = db_session.create_session()
+        good = db_sess.query(Good).get(good_id)
+        if not good:
+            abort(404)
+        elif good.user_id != current_user.id:
+            abort(403)
+        else:
+            form.name.data = good.name
+            form.price.data = good.price
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        good = db_sess.query(Good).get(good_id)
+        if not good:
+            abort(404)
+        elif good.user_id != current_user.id:
+            abort(403)
+        else:
+            good.name = form.name.data
+            good.price = form.price.data
+
+            db_sess.commit()
+            return redirect('/profile')
+    params = {
+        'title': 'Изменение товара',
+        'form': form
+    }
+    return render_template('add_good_form.html', **params)
+
+
+@app.route('/delete/<int:good_id>', methods=['GET', 'POST'])
+@login_required
+def delete_good(good_id):
+    db_sess = db_session.create_session()
+    good = db_sess.query(Good).get(good_id)
+    if not good:
+        abort(404)
+    if good.user_id != current_user.id:
+        abort(403)
+    else:
+        try:
+            os.remove(f'static/uploads/{good.photo}')
+        except FileNotFoundError:
+            pass
+        db_sess.delete(good)
+        db_sess.commit()
+    return redirect('/profile')
 
 
 @app.route('/')

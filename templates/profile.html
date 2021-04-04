@@ -10,7 +10,11 @@
             <div class="good-container" onclick="location.href='good/{{good.id}}'">
                 <h2 style="text-align: center;">{{good.name}}</h2>
                 <img src="{{url_for('static', filename='uploads/{}'.format(good.photo))}}"
-                     alt="no-image" width="300" height="300">
+                     alt="no-image" width="300" height="300"><br>
+                <p style="text-align: center;">
+                    <a href="edit/{{good.id}}" class="btn btn-warning">Изменить</a>
+                    <a href="delete/{{good.id}}" class="btn btn-danger">Удалить</a>
+                </p>
             </div>
         {% endfor %}
     </section>

@@ -5,5 +5,10 @@
     <img src="{{url_for('static', filename='uploads/{}'.format(good.photo))}}" alt="{{good.name}}" class="good_photo"
          width="300" height="300">
     <p>Цена: {{good.price}}</p>
-    <p>Продавец: {{good.user.username}}</p>
+    {% if good.user.id == current_user.id %}
+        {% set user_link = "../profile" %}
+    {% else %}
+        {% set user_link = "../user/{}".format(good.user.id) %}
+    {% endif %}
+    <p>Продавец: <a href="{{user_link}}" class="user-link">{{good.user.username}}</a></p>
 {% endblock %}
