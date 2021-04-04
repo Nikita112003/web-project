@@ -2,10 +2,10 @@
 
 {% block content %}
     <section>
-        {% for good in goods %}
-            <div class="good-container" onclick="location.href='good/{{good.id}}'">
-                <h2 style="text-align: center;">{{good.name}}</h2>
-                <img src="{{url_for('static', filename='uploads/{}'.format(good.photo))}}"
+        {% for product in products %}
+            <div class="product-container" onclick="location.href='product/{{product.id}}'">
+                <h2 style="text-align: center;">{{product.name}}</h2>
+                <img src="{{url_for('static', filename='uploads/{}'.format(product.photo))}}"
                      alt="no-image" width="300" height="300">
             </div>
         {% endfor %}

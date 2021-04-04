@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{product.name}}</h1>
+    <img src="{{url_for('static', filename='uploads/{}'.format(product.photo))}}" alt="{{product.name}}" class="product_photo"
+         width="300" height="300">
+    <p>Цена: {{product.price}}</p>
+    {% if product.user.id == current_user.id %}
+        {% set user_link = "../profile" %}
+    {% else %}
+        {% set user_link = "../user/{}".format(product.user.id) %}
+    {% endif %}
+    <p>Продавец: <a href="{{user_link}}" class="user-link">{{product.user.username}}</a></p>
+{% endblock %}

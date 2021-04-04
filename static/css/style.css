@@ -14,11 +14,11 @@ section {
     display: flex;
     flex-wrap: wrap
 }
-.good-container {
+.product-container {
     margin: 10px;
     position: relative;
 }
-img.good_photo {
+img.product_photo {
     float: left;
     margin-right: 15px;
 }

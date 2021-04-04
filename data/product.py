@@ -1,10 +1,11 @@
 from .db_session import SqlAlchemyBase
 import sqlalchemy
 from sqlalchemy import orm
+from sqlalchemy_serializer import SerializerMixin
 
 
-class Good(SqlAlchemyBase):
-    __tablename__ = 'goods'
+class Product(SqlAlchemyBase, SerializerMixin):
+    __tablename__ = 'products'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
     name = sqlalchemy.Column(sqlalchemy.String)

@@ -13,7 +13,7 @@ class User(SqlAlchemyBase, UserMixin):
     email = sqlalchemy.Column(sqlalchemy.String)
     password = sqlalchemy.Column(sqlalchemy.String)
 
-    good = orm.relation('Good', back_populates='user')
+    product = orm.relation('Product', back_populates='user')
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

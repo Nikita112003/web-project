@@ -1,4 +1,4 @@
-from flask import abort, Flask, redirect, render_template, request
+from flask import abort, Blueprint, Flask, jsonify, redirect, render_template, request
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
@@ -7,7 +7,7 @@ from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 from data import db_session
 from data.user import User
-from data.good import Good
+from data.product import Product
 import os
 import random
 from string import ascii_letters, digits
@@ -15,6 +15,8 @@ from string import ascii_letters, digits
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '421b1f57d3e228b7'
 app.config['UPLOAD_FOLDER'] = '/static/uploads'
+
+blueprint = Blueprint('products_api', __name__, template_folder='templates')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -35,14 +37,14 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Войти')
 
 
-class AddGoodForm(FlaskForm):
+class AddProductForm(FlaskForm):
     name = StringField('Название', validators=[DataRequired()])
     price = DecimalField('Цена', validators=[DataRequired()])
     photo = FileField('Фото', validators=[FileRequired(), FileAllowed(['jpg', 'png'])])
     submit = SubmitField('Добавить')
 
 
-class EditGoodForm(FlaskForm):
+class EditProductForm(FlaskForm):
     name = StringField('Название', validators=[DataRequired()])
     price = DecimalField('Цена', validators=[DataRequired()])
     submit = SubmitField('Добавить')
@@ -123,10 +125,10 @@ def logout():
 @login_required
 def profile():
     db_sess = db_session.create_session()
-    goods = db_sess.query(Good).filter(Good.user_id == current_user.id).all()
+    products = db_sess.query(Product).filter(Product.user_id == current_user.id).all()
     params = {
         'title': 'Личный кабинет',
-        'goods': goods
+        'products': products
     }
     return render_template('profile.html', **params)
 
@@ -137,38 +139,38 @@ def get_user(user_id):
     user = db_sess.query(User).get(user_id)
     if not user:
         abort(404)
-    goods = db_sess.query(Good).filter(Good.user_id == user.id).all()
+    products = db_sess.query(Product).filter(Product.user_id == user.id).all()
     params = {
         'title': user.username,
         'user': user,
-        'goods': goods
+        'products': products
     }
     return render_template('user.html', **params)
 
 
-@app.route('/good/<int:good_id>')
-def get_good(good_id):
+@app.route('/product/<int:product_id>')
+def get_product(product_id):
     db_sess = db_session.create_session()
-    good = db_sess.query(Good).get(good_id)
-    if not good:
+    product = db_sess.query(Product).get(product_id)
+    if not product:
         abort(404)
     params = {
-        'title': good.name,
-        'good': good
+        'title': product.name,
+        'product': product
     }
-    return render_template('good.html', **params)
+    return render_template('product.html', **params)
 
 
-@app.route('/add_good', methods=['GET', 'POST'])
+@app.route('/add_product', methods=['GET', 'POST'])
 @login_required
-def add_good():
-    form = AddGoodForm()
+def add_product():
+    form = AddProductForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        good = Good()
-        good.name = form.name.data
-        good.price = form.price.data
-        good.user_id = current_user.id
+        product = Product()
+        product.name = form.name.data
+        product.price = form.price.data
+        product.user_id = current_user.id
 
         file = form.photo.data
         filetype = file.filename.split('.')[-1]
@@ -176,10 +178,10 @@ def add_good():
             filename = ''.join(random.choices(ascii_letters + digits, k=25)) + f'.{filetype}'
             if not os.path.exists(f'static/uploads/{filename}'):
                 break
-        good.photo = filename
+        product.photo = filename
         file.save(f'static/uploads/{filename}')
 
-        db_sess.add(good)
+        db_sess.add(product)
         db_sess.commit()
 
         return redirect('/')
@@ -187,33 +189,33 @@ def add_good():
         'title': 'Добавление товара',
         'form': form
     }
-    return render_template('add_good_form.html', **params)
+    return render_template('add_product_form.html', **params)
 
 
-@app.route('/edit/<int:good_id>', methods=['GET', 'POST'])
+@app.route('/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
-def edit_good(good_id):
-    form = EditGoodForm()
+def edit_product(product_id):
+    form = EditProductForm()
     if request.method == 'GET':
         db_sess = db_session.create_session()
-        good = db_sess.query(Good).get(good_id)
-        if not good:
+        product = db_sess.query(Product).get(product_id)
+        if not product:
             abort(404)
-        elif good.user_id != current_user.id:
+        elif product.user_id != current_user.id:
             abort(403)
         else:
-            form.name.data = good.name
-            form.price.data = good.price
+            form.name.data = product.name
+            form.price.data = product.price
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        good = db_sess.query(Good).get(good_id)
-        if not good:
+        product = db_sess.query(Product).get(product_id)
+        if not product:
             abort(404)
-        elif good.user_id != current_user.id:
+        elif product.user_id != current_user.id:
             abort(403)
         else:
-            good.name = form.name.data
-            good.price = form.price.data
+            product.name = form.name.data
+            product.price = form.price.data
 
             db_sess.commit()
             return redirect('/profile')
@@ -221,24 +223,24 @@ def edit_good(good_id):
         'title': 'Изменение товара',
         'form': form
     }
-    return render_template('add_good_form.html', **params)
+    return render_template('add_product_form.html', **params)
 
 
-@app.route('/delete/<int:good_id>', methods=['GET', 'POST'])
+@app.route('/delete/<int:product_id>', methods=['GET', 'POST'])
 @login_required
-def delete_good(good_id):
+def delete_product(product_id):
     db_sess = db_session.create_session()
-    good = db_sess.query(Good).get(good_id)
-    if not good:
+    product = db_sess.query(Product).get(product_id)
+    if not product:
         abort(404)
-    if good.user_id != current_user.id:
+    if product.user_id != current_user.id:
         abort(403)
     else:
         try:
-            os.remove(f'static/uploads/{good.photo}')
+            os.remove(f'static/uploads/{product.photo}')
         except FileNotFoundError:
             pass
-        db_sess.delete(good)
+        db_sess.delete(product)
         db_sess.commit()
     return redirect('/profile')
 
@@ -246,16 +248,55 @@ def delete_good(good_id):
 @app.route('/')
 def index():
     db_sess = db_session.create_session()
-    goods = db_sess.query(Good).all()
+    products = db_sess.query(Product).all()
     params = {
         'title': 'Онлайн-магазин',
-        'goods': goods
+        'products': products
     }
     return render_template('index.html', **params)
 
 
+@blueprint.route('/api/products')
+def api_get_products():
+    db_sess = db_session.create_session()
+    products = db_sess.query(Product).all()
+    return jsonify(
+        {
+            'products': [product.to_dict(only=('id', 'name', 'price', 'user_id')) for product in products]
+        }
+    )
+
+
+@blueprint.route('/api/product/<int:product_id>', methods=['GET'])
+def api_get_one_product(product_id):
+    db_sess = db_session.create_session()
+    product = db_sess.query(Product).get(product_id)
+    if not product:
+        return jsonify({'error': 'Not found'})
+    return jsonify(
+        {
+            'product': product.to_dict(only=('id', 'name', 'price', 'user_id'))
+        }
+    )
+
+
+@blueprint.route('/api/user/<int:user_id>', methods=['GET'])
+def api_get_products_of_user(user_id):
+    db_sess = db_session.create_session()
+    products = db_sess.query(Product).filter(Product.user_id == user_id)
+    if not products:
+        return jsonify({'error': 'Not found'})
+    return jsonify(
+        {
+            'products': [product.to_dict(only=('id', 'name', 'price')) for product in products]
+        }
+    )
+
+
 def main():
     db_session.global_init('db/db.sqlite')
+    app.register_blueprint(blueprint)
+
     app.run()
 
 
