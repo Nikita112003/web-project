@@ -6,7 +6,7 @@
     <h1 style="text-align: center;">Товары пользователя</h1>
     <section>
         {% for product in products %}
-            <div class="product-container" onclick="location.href='product/{{product.id}}'">
+            <div class="product-container" onclick="location.href='../product/{{product.id}}'">
                 <h2 style="text-align: center;">{{product.name}}</h2>
                 <img src="{{url_for('static', filename='uploads/{}'.format(product.photo))}}"
                      alt="no-image" width="300" height="300">

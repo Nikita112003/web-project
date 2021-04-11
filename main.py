@@ -47,7 +47,7 @@ class AddProductForm(FlaskForm):
 class EditProductForm(FlaskForm):
     name = StringField('Название', validators=[DataRequired()])
     price = DecimalField('Цена', validators=[DataRequired()])
-    submit = SubmitField('Добавить')
+    submit = SubmitField('Изменить')
 
 
 @login_manager.user_loader
@@ -161,6 +161,103 @@ def get_product(product_id):
     return render_template('product.html', **params)
 
 
+@app.route('/shopcart')
+@login_required
+def get_shopcart():
+    db_sess = db_session.create_session()
+
+    shopcart = [int(_) for _ in current_user.shopcart.split() if int(_) > -1]
+    products = [db_sess.query(Product).get(_) for _ in shopcart]
+
+    params = {
+        'title': 'Корзина',
+        'products': products
+    }
+    return render_template('shopcart.html', **params)
+
+
+@app.route('/add_to_shopcart/<int:product_id>')
+@login_required
+def add_to_shopcart(product_id):
+    db_sess = db_session.create_session()
+    product = db_sess.query(Product).get(product_id)
+    user = db_sess.query(User).get(current_user.id)
+    if not product:
+        abort(404)
+    elif current_user.id == product.user_id:
+        abort(400)
+    shopcart = current_user.shopcart.split()
+    if str(product_id) in shopcart:
+        abort(400)
+    shopcart.append(product_id)
+    shopcart = sorted(shopcart, key=lambda x: int(x))
+    shopcart = ' '.join(str(_) for _ in shopcart)
+    user.shopcart = shopcart
+    db_sess.commit()
+
+    return redirect(f'../product/{product_id}')
+
+
+@app.route('/delete_from_shopcart1/<int:product_id>')
+@login_required
+def delete_from_shopcart1(product_id):
+    db_sess = db_session.create_session()
+    product = db_sess.query(Product).get(product_id)
+    user = db_sess.query(User).get(current_user.id)
+    if not product:
+        abort(404)
+    shopcart: list = current_user.shopcart.split()
+    if str(product_id) not in shopcart:
+        abort(400)
+    del shopcart[shopcart.index(str(product_id))]
+    shopcart: str = ' '.join(str(_) for _ in shopcart)
+    user.shopcart = shopcart
+    db_sess.commit()
+
+    return redirect(f'../product/{product_id}')
+
+
+@app.route('/delete_from_shopcart2/<int:product_id>')
+@login_required
+def delete_from_shopcart2(product_id):
+    db_sess = db_session.create_session()
+    product = db_sess.query(Product).get(product_id)
+    user = db_sess.query(User).get(current_user.id)
+    if not product:
+        abort(404)
+    shopcart: list = current_user.shopcart.split()
+    if str(product_id) not in shopcart:
+        abort(400)
+    del shopcart[shopcart.index(str(product_id))]
+    shopcart: str = ' '.join(str(_) for _ in shopcart)
+    user.shopcart = shopcart
+    db_sess.commit()
+
+    return redirect('/shopcart')
+
+
+@app.route('/buy')
+@login_required
+def buy():
+    db_sess = db_session.create_session()
+
+    shopcart = [int(_) for _ in current_user.shopcart.split() if int(_) > -1]
+    products = [db_sess.query(Product).get(_) for _ in shopcart]
+    user = db_sess.query(User).get(current_user.id)
+
+    for product in products:
+        try:
+            os.remove(f'static/uploads/{product.photo}')
+        except FileNotFoundError:
+            pass
+        db_sess.delete(product)
+
+    user.shopcart = '-1'
+    db_sess.commit()
+
+    return redirect('/')
+
+
 @app.route('/add_product', methods=['GET', 'POST'])
 @login_required
 def add_product():
@@ -223,7 +320,7 @@ def edit_product(product_id):
         'title': 'Изменение товара',
         'form': form
     }
-    return render_template('add_product_form.html', **params)
+    return render_template('edit_product_form.html', **params)
 
 
 @app.route('/delete/<int:product_id>', methods=['GET', 'POST'])

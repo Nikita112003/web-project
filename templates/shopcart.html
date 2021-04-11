@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Учетная запись</h1>
-    <h2>{{current_user.username}}</h2>
-    <a href="/logout" class="btn btn-danger">Выйти</a>
-    <h1 style="text-align: center;">Ваши товары</h1>
+    <h1 style="text-align: center;">Корзина</h1>
+    <p>
+        <a href="buy" class="btn btn-success">Купить</a>
+    </p>
     <section>
         {% for product in products %}
             <div class="product-container" onclick="location.href='product/{{product.id}}'">
@@ -12,8 +12,7 @@
                 <img src="{{url_for('static', filename='uploads/{}'.format(product.photo))}}"
                      alt="no-image" width="300" height="300"><br>
                 <p style="text-align: center;">
-                    <a href="edit/{{product.id}}" class="btn btn-warning">Изменить</a>
-                    <a href="delete/{{product.id}}" class="btn btn-danger">Удалить</a>
+                    <a href="delete_from_shopcart2/{{product.id}}" class="btn btn-danger">Удалить</a>
                 </p>
             </div>
         {% endfor %}
