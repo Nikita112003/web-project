@@ -14,6 +14,9 @@
 <body>
 <nav class="navbar navbar-light bg-light">
     <h1><a href="/.">Онлайн-магазин</a></h1>
+    <p>
+        <a href="/search" class="navbar-brand btn btn-light">Поиск</a>
+    </p>
     {% if current_user.is_authenticated %}
         <p>
             <a href="/profile" class="navbar-brand btn btn-light">{{current_user.username}}</a>

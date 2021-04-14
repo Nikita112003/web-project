@@ -3,7 +3,7 @@ from flask_login import current_user, LoginManager, login_required, login_user, 
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import PasswordField, StringField, SubmitField, BooleanField, DecimalField
-from wtforms.fields.html5 import EmailField
+from wtforms.fields.html5 import EmailField, SearchField
 from wtforms.validators import DataRequired
 from data import db_session
 from data.user import User
@@ -48,6 +48,11 @@ class EditProductForm(FlaskForm):
     name = StringField('Название', validators=[DataRequired()])
     price = DecimalField('Цена', validators=[DataRequired()])
     submit = SubmitField('Изменить')
+
+
+class SearchForm(FlaskForm):
+    search = SearchField('Поиск', validators=[DataRequired()])
+    submit = SubmitField('Искать')
 
 
 @login_manager.user_loader
@@ -340,6 +345,33 @@ def delete_product(product_id):
         db_sess.delete(product)
         db_sess.commit()
     return redirect('/profile')
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    form = SearchForm()
+    if form.validate_on_submit():
+        text = form.search.data
+        return redirect(f'search/{text}')
+    params = {
+        'title': 'Поиск',
+        'form': form
+    }
+    return render_template('search_.html', **params)
+
+
+@app.route('/search/<text>')
+def search_results(text):
+    db_sess = db_session.create_session()
+    users = db_sess.query(User).filter(User.username.like(f'%{text}%')).all()
+    products = db_sess.query(Product).filter(Product.name.like(f'%{text}%')).all()
+
+    params = {
+        'title': 'Поиск',
+        'users': users,
+        'products': products
+    }
+    return render_template('search_results.html', **params)
 
 
 @app.route('/')
