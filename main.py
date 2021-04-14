@@ -362,14 +362,27 @@ def search():
 
 @app.route('/search/<text>')
 def search_results(text):
+    text = text.lower()
+
     db_sess = db_session.create_session()
-    users = db_sess.query(User).filter(User.username.like(f'%{text}%')).all()
-    products = db_sess.query(Product).filter(Product.name.like(f'%{text}%')).all()
+
+    users = db_sess.query(User).all()
+    users_search_result = []
+    for user in users:
+        if text in user.username.lower():
+            users_search_result.append(user)
+    users_search_result = sorted(users_search_result, key=lambda x: x.username)
+
+    products = db_sess.query(Product).all()
+    products_search_result = []
+    for product in products:
+        if text in product.name.lower():
+            products_search_result.append(product)
 
     params = {
         'title': 'Поиск',
-        'users': users,
-        'products': products
+        'users': users_search_result,
+        'products': products_search_result
     }
     return render_template('search_results.html', **params)
 
