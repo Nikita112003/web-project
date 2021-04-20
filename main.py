@@ -1,4 +1,4 @@
-from flask import abort, Blueprint, Flask, jsonify, redirect, render_template, request
+from flask import abort, Blueprint, Flask, jsonify, redirect, render_template, request, make_response
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
@@ -10,6 +10,7 @@ from data.user import User
 from data.product import Product
 import os
 import random
+import re
 from string import ascii_letters, digits
 
 app = Flask(__name__)
@@ -61,6 +62,26 @@ def load_user(user_id):
     return db_sess.query(User).get(user_id)
 
 
+@app.errorhandler(403)
+def forbidden(error):
+    params = {
+        'title': 'Запрещено',
+        'error': 'Запрещено',
+        'description': 'У Вас недостаточно прав для просмотра этой страницы'
+    }
+    return make_response(render_template('error.html', **params), 403)
+
+
+@app.errorhandler(404)
+def not_found(error):
+    params = {
+        'title': 'Страница не найдена',
+        'error': 'Страница не найдена',
+        'description': 'Возможно, вы допустили опечатку в адресе'
+    }
+    return make_response(render_template('error.html', **params), 404)
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -90,6 +111,7 @@ def register():
 
         login_user(user, remember=True)
         return redirect('/')
+
     params = {
         'title': 'Регистрация',
         'form': form,
@@ -112,6 +134,7 @@ def login():
             'message': 'Неправильный логин или пароль'
         }
         return render_template('login.html', **params)
+
     params = {
         'title': 'Авторизация',
         'form': form
@@ -131,8 +154,19 @@ def logout():
 def profile():
     db_sess = db_session.create_session()
     products = db_sess.query(Product).filter(Product.user_id == current_user.id).all()
+
+    notifications = current_user.notifications
+    if notifications.startswith('-1'):
+        notifications = []
+    else:
+        notifications = re.split(r'(?<!\\);', notifications)
+
+        user = db_sess.query(User).get(current_user.id).notifications = '-1'
+        db_sess.commit()
+
     params = {
         'title': 'Личный кабинет',
+        'notifications': notifications,
         'products': products
     }
     return render_template('profile.html', **params)
@@ -145,6 +179,7 @@ def get_user(user_id):
     if not user:
         abort(404)
     products = db_sess.query(Product).filter(Product.user_id == user.id).all()
+
     params = {
         'title': user.username,
         'user': user,
@@ -159,6 +194,7 @@ def get_product(product_id):
     product = db_sess.query(Product).get(product_id)
     if not product:
         abort(404)
+
     params = {
         'title': product.name,
         'product': product
@@ -251,6 +287,15 @@ def buy():
     user = db_sess.query(User).get(current_user.id)
 
     for product in products:
+        seller = db_sess.query(User).filter(User.id == product.user_id).first()
+        notifications = re.split(r'(?<!\\);', seller.notifications)
+        if notifications[0] == '-1':
+            notifications = []
+        notifications.append(product.name.replace(';', '\\;'))
+        notifications = ';'.join(notifications)
+        seller.notifications = notifications
+        db_sess.commit()
+
         try:
             os.remove(f'static/uploads/{product.photo}')
         except FileNotFoundError:
@@ -270,7 +315,10 @@ def add_product():
     if form.validate_on_submit():
         db_sess = db_session.create_session()
         product = Product()
-        product.name = form.name.data
+        if form.name.data == '-1':
+            product.name = '- 1'
+        else:
+            product.name = form.name.data
         product.price = form.price.data
         product.user_id = current_user.id
 
@@ -287,6 +335,7 @@ def add_product():
         db_sess.commit()
 
         return redirect('/')
+
     params = {
         'title': 'Добавление товара',
         'form': form
@@ -316,7 +365,10 @@ def edit_product(product_id):
         elif product.user_id != current_user.id:
             abort(403)
         else:
-            product.name = form.name.data
+            if form.name.data == '-1':
+                product.name = '- 1'
+            else:
+                product.name = form.name.data
             product.price = form.price.data
 
             db_sess.commit()
@@ -353,6 +405,7 @@ def search():
     if form.validate_on_submit():
         text = form.search.data
         return redirect(f'search/{text}')
+
     params = {
         'title': 'Поиск',
         'form': form
@@ -391,6 +444,7 @@ def search_results(text):
 def index():
     db_sess = db_session.create_session()
     products = db_sess.query(Product).all()
+
     params = {
         'title': 'Онлайн-магазин',
         'products': products
@@ -404,7 +458,8 @@ def api_get_products():
     products = db_sess.query(Product).all()
     return jsonify(
         {
-            'products': [product.to_dict(only=('id', 'name', 'price', 'user_id')) for product in products]
+            'products': [product.to_dict(only=('id', 'name', 'price', 'user_id'))
+                         for product in products]
         }
     )
 
@@ -415,6 +470,7 @@ def api_get_one_product(product_id):
     product = db_sess.query(Product).get(product_id)
     if not product:
         return jsonify({'error': 'Not found'})
+
     return jsonify(
         {
             'product': product.to_dict(only=('id', 'name', 'price', 'user_id'))
@@ -428,6 +484,7 @@ def api_get_products_of_user(user_id):
     products = db_sess.query(Product).filter(Product.user_id == user_id)
     if not products:
         return jsonify({'error': 'Not found'})
+
     return jsonify(
         {
             'products': [product.to_dict(only=('id', 'name', 'price')) for product in products]

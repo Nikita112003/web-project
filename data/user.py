@@ -12,7 +12,8 @@ class User(SqlAlchemyBase, UserMixin):
     username = sqlalchemy.Column(sqlalchemy.String)
     email = sqlalchemy.Column(sqlalchemy.String)
     password = sqlalchemy.Column(sqlalchemy.String)
-    shopcart = sqlalchemy.Column(sqlalchemy.String, default='')
+    shopcart = sqlalchemy.Column(sqlalchemy.String, default='-1')
+    notifications = sqlalchemy.Column(sqlalchemy.String, default='-1')
 
     product = orm.relation('Product', back_populates='user')
 
