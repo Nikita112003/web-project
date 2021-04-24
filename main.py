@@ -161,7 +161,7 @@ def profile():
     else:
         notifications = re.split(r'(?<!\\);', notifications)
 
-        user = db_sess.query(User).get(current_user.id).notifications = '-1'
+        db_sess.query(User).get(current_user.id).notifications = '-1'
         db_sess.commit()
 
     params = {
